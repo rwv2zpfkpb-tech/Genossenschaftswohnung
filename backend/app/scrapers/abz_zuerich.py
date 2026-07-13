@@ -1,17 +1,23 @@
-"""Scraper fuer die Allgemeine Baugenossenschaft Winterthur (ABW).
+"""Scraper fuer die Allgemeine Baugenossenschaft Zuerich (ABZ).
 
-Besonderheit dieser Seite: Es gibt keine Uebersicht mit Links auf einzelne
-Detailseiten. Freie Wohnungen werden direkt auf listing_url als Eintraege
-unter der Ueberschrift "A - Wohnungen" gepflegt (Stand Juli 2026: je ein
-<li> in einer <ul>; in aelteren Versionen der Seite - siehe web.archive.org -
-war es je ein eigener <h1>-Block). robots.txt erlaubt das Crawlen von
-/vermietung/. Da alle Daten bereits auf dieser einen Seite stehen, sind
-keine weiteren Requests noetig (kein Delay zwischen Requests erforderlich).
+Freie Mietobjekte werden unter listing_url in einer Card-Liste
+(`ul.block-freiemietobjekte__list`) gepflegt - dieselbe Grid-Komponente
+("siedlungen"-BEM-Klassen), die die ABZ auch fuer ihre Siedlungsuebersicht
+(/bauten/siedlungen/) verwendet. robots.txt erlaubt uneingeschraenktes
+Crawlen (Yoast-Block ohne Disallow).
 
-Ohne aktuell freie Wohnung im Live-Betrieb (Stand des letzten Abrufs: keine
-Vakanzen) liess sich die Extraktion nicht gegen echte Live-Daten verifizieren,
-nur gegen archivierte Snapshots mit realen Inseraten. Bei Format-Aenderungen
-der Seite ggf. anpassen.
+Zum Zeitpunkt der Implementierung (Juli 2026) waren keine Mietobjekte
+ausgeschrieben (die Liste ist bei 0 Vakanzen leer im DOM, sowohl serverseitig
+gerendert als auch nach dem Laden - kein Nachladen per XHR beobachtet). Auch
+in ueber einem Dutzend web.archive.org-Snapshots seit 2020 war die Liste nie
+befuellt (Inserate bleiben laut FAQ der Seite oft nur wenige Tage online).
+Die Extraktion der Karten-Felder liess sich daher nicht gegen echte Live-Daten
+verifizieren - nur die Container-Selektoren (leere Liste) sind bestaetigt.
+_parse_item verlaesst sich bewusst auf generische Heuristiken (erste
+Ueberschrift/erster Link als Titel, Regex-Suche im Volltext fuer
+Zimmer/Preis/Flaeche) statt auf spezifische Card-Klassennamen, damit die
+Extraktion auch bei unbekanntem Markup der einzelnen Karten robust bleibt.
+Bei der ersten echten Vakanz unbedingt gegen die Live-Seite gegenchecken.
 """
 import hashlib
 import re
@@ -21,28 +27,19 @@ from playwright.async_api import Locator, Page
 from app.crud import WohnungData
 from app.scrapers.base import BaseScraper
 
-#: Textbausteine, mit denen ABW den Platzhalter "keine Wohnung frei" fuellt.
-_NO_VACANCY_MARKERS = (
-    "werden hier publiziert",
-    "zur zeit sind keine",
-)
-
 _ROOMS_RE = re.compile(r"(\d+(?:[.,]\d+)?)\s*-?\s*zimmer", re.IGNORECASE)
-_PRICE_RE = re.compile(r"fr\.?\s*([\d'’]+)", re.IGNORECASE)
+_PRICE_RE = re.compile(r"(?:fr\.?|chf)\s*([\d'’]+)", re.IGNORECASE)
 _AREA_RE = re.compile(r"(\d+(?:[.,]\d+)?)\s*m(?:2|²)", re.IGNORECASE)
 
 
-class ABWWinterthurScraper(BaseScraper):
-    name = "abw_winterthur"
-    listing_url = "https://abw-winterthur.ch/vermietung/"
+class ABZZuerichScraper(BaseScraper):
+    name = "abz_zuerich"
+    listing_url = "https://www.abz.ch/wohnen/mieten/"
 
     async def scrape(self, page: Page) -> list[WohnungData]:
         await page.goto(self.listing_url, wait_until="load")
 
-        wohnungen_liste = page.locator(
-            ".entry-content h1:has-text('Wohnungen') ~ ul"
-        ).first
-        items = wohnungen_liste.locator("> li")
+        items = page.locator(".block-freiemietobjekte__list > li")
 
         listings: list[WohnungData] = []
         for i in range(await items.count()):
@@ -53,7 +50,7 @@ class ABWWinterthurScraper(BaseScraper):
 
     async def _parse_item(self, item: Locator) -> WohnungData | None:
         text = (await item.inner_text()).strip()
-        if not text or any(marker in text.lower() for marker in _NO_VACANCY_MARKERS):
+        if not text:
             return None
 
         lines = [line.strip() for line in text.splitlines() if line.strip()]
@@ -75,7 +72,15 @@ class ABWWinterthurScraper(BaseScraper):
 
         image_urls = []
         for img in await item.locator("img").all():
-            src = await img.get_attribute("src")
+            srcset = await img.get_attribute("data-srcset") or await img.get_attribute(
+                "srcset"
+            )
+            if srcset:
+                first_url = srcset.split(",")[0].strip().split(" ")[0]
+                if first_url:
+                    image_urls.append(first_url)
+                continue
+            src = await img.get_attribute("data-src") or await img.get_attribute("src")
             if src:
                 image_urls.append(src)
 
@@ -83,9 +88,6 @@ class ABWWinterthurScraper(BaseScraper):
         detail_url = (
             await first_link.get_attribute("href") if await first_link.count() else None
         )
-        # Es gibt keine echte Detailseite pro Inserat - falls kein Link
-        # vorhanden ist (z.B. kein Grundriss-PDF verlinkt), synthetisieren
-        # wir eine stabile, eindeutige URL fuer quelle_url (DB-Unique-Constraint).
         url = detail_url or (
             f"{self.listing_url}#{hashlib.sha1(heading.encode('utf-8')).hexdigest()[:10]}"
         )

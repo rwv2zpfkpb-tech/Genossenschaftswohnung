@@ -14,6 +14,7 @@ class WohnungOut(BaseModel):
     viertel: str | None
     zimmer: float | None
     preis: int | None
+    flaeche: float | None
     beschreibung: str | None
     bild_urls: list[str]
     lat: float | None
@@ -27,4 +28,5 @@ class WohnungFilter(BaseModel):
     zimmer_min: float | None = None
     zimmer_max: float | None = None
     preis_max: int | None = None
+    flaeche_max: float | None = None
     viertel: str | None = None

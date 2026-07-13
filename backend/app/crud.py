@@ -10,7 +10,7 @@ from app.models import Wohnung
 #: Felder, die den Hash bestimmen - alles, was sich bei einer inhaltlichen
 #: Aenderung des Inserats aendern wuerde. genossenschaft/quelle_url bewusst
 #: aussen vor, da sie die Identitaet des Datensatzes sind, nicht den Inhalt.
-_HASH_FIELDS = ("adresse", "viertel", "zimmer", "preis", "beschreibung", "bild_urls")
+_HASH_FIELDS = ("adresse", "viertel", "zimmer", "preis", "flaeche", "beschreibung", "bild_urls")
 
 
 @dataclass
@@ -23,6 +23,7 @@ class WohnungData:
     viertel: str | None = None
     zimmer: float | None = None
     preis: int | None = None
+    flaeche: float | None = None
     beschreibung: str | None = None
     bild_urls: list[str] = field(default_factory=list)
     lat: float | None = None
@@ -62,6 +63,7 @@ def upsert_wohnung(db: Session, data: WohnungData) -> tuple[Wohnung, bool]:
             viertel=data.viertel,
             zimmer=data.zimmer,
             preis=data.preis,
+            flaeche=data.flaeche,
             beschreibung=data.beschreibung,
             bild_urls=data.bild_urls,
             lat=data.lat,
@@ -85,6 +87,7 @@ def upsert_wohnung(db: Session, data: WohnungData) -> tuple[Wohnung, bool]:
         wohnung.viertel = data.viertel
         wohnung.zimmer = data.zimmer
         wohnung.preis = data.preis
+        wohnung.flaeche = data.flaeche
         wohnung.beschreibung = data.beschreibung
         wohnung.bild_urls = data.bild_urls
         wohnung.lat = data.lat

@@ -24,6 +24,7 @@ class Wohnung(Base):
     viertel: Mapped[str | None] = mapped_column(String, nullable=True)
     zimmer: Mapped[float | None] = mapped_column(Float, nullable=True)
     preis: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    flaeche: Mapped[float | None] = mapped_column(Float, nullable=True)
     beschreibung: Mapped[str | None] = mapped_column(Text, nullable=True)
     bild_urls: Mapped[list[str]] = mapped_column(JSON, default=list)
 
