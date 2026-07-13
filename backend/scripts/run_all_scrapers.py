@@ -68,6 +68,9 @@ async def run_all() -> None:
                     fehlgeschlagen.append(scraper.name)
                     continue
 
+                logger.info(
+                    "Scraper '%s': %d neu, %d aktualisiert", scraper.name, neu, aktualisiert
+                )
                 gesamt_neu += neu
                 gesamt_aktualisiert += aktualisiert
                 alle_neuen_wohnungen.extend(neue_wohnungen)

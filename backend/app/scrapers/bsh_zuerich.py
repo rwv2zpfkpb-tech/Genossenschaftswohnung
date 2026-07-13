@@ -67,6 +67,9 @@ _LABEL_LINE_RE = re.compile(
 _ROOMS_RE = re.compile(r"(\d+(?:[.,]\d+)?)\s*-?\s*zimmer", re.IGNORECASE)
 _PRICE_RE = re.compile(r"(?:fr\.?|chf)\s*([\d'’]+)", re.IGNORECASE)
 _AREA_RE = re.compile(r"(\d+(?:[.,]\d+)?)\s*m(?:2|²)", re.IGNORECASE)
+#: Siehe gbl_zuerich.py - ohne browserartigen User-Agent blocken manche WAFs
+#: requests.get() (haeufig mit einer leeren statt einer Fehler-Antwort).
+_HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"}
 
 
 class BSHZuerichScraper(BaseScraper):
@@ -103,7 +106,7 @@ class BSHZuerichScraper(BaseScraper):
         return listings
 
     def _parse_pdf(self, url: str, titel: str) -> WohnungData | None:
-        response = requests.get(url, timeout=30)
+        response = requests.get(url, headers=_HEADERS, timeout=30)
         response.raise_for_status()
         reader = pypdf.PdfReader(io.BytesIO(response.content))
         text = "\n".join(pdf_page.extract_text() or "" for pdf_page in reader.pages)

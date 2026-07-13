@@ -36,6 +36,10 @@ from app.scrapers.base import BaseScraper
 _ORGANIZATION_ID = 729
 _API_URL = "https://flatfox.ch/api/v1/public-listing/"
 _BASE_URL = "https://flatfox.ch"
+#: Ohne eigenen User-Agent schickt requests "python-requests/x.y" - ein
+#: bekanntes Bot-Signal, das manche WAFs mit einer leeren (aber HTTP-200)
+#: Antwort statt einem Fehler beantworten. Ein browserartiger UA umgeht das.
+_HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"}
 
 
 class GBLZuerichScraper(BaseScraper):
@@ -53,7 +57,7 @@ class GBLZuerichScraper(BaseScraper):
             "limit": 50,
         }
         while url:
-            response = requests.get(url, params=params, timeout=30)
+            response = requests.get(url, params=params, headers=_HEADERS, timeout=30)
             response.raise_for_status()
             data = response.json()
             listings.extend(self._parse_item(item) for item in data["results"])
