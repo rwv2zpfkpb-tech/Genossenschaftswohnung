@@ -6,7 +6,7 @@ Scraper unter `backend/app/scrapers/`. Bei jedem neuen Scraper diese Datei
 aktualisieren (Zeile auf ✅ setzen + Modulname eintragen) und den Stand-Timestamp
 unten anpassen.
 
-Stand: 2026-07-13 (5 / 114 implementiert)
+Stand: 2026-07-13 (7 / 114 implementiert)
 
 ## Legende
 - ✅ implementiert (in `registry.py` registriert)
@@ -63,7 +63,7 @@ Stand: 2026-07-13 (5 / 114 implementiert)
 | ⬜ | Baugenossenschaft Heubach | Horgen | |
 | ⬜ | Heugarten | Mönchaltorf | |
 | ⬜ | Wohnbaugenossenschaft Holberg | Kloten | |
-| ⬜ | Bau- und Siedlungsgenossenschaft Höngg (BSH) Zürich | Stadt Zürich | |
+| ✅ | Bau- und Siedlungsgenossenschaft Höngg (BSH) Zürich | Stadt Zürich | `bsh_zuerich.py` |
 | ⬜ | Gemeinnützige Baugenossenschaft Horgen (GBH) | Horgen | |
 | ⬜ | IGEBA-Baugenossenschaft Wetzikon | Wetzikon | |
 | ⬜ | Wohnstiftung Imfeldsteig für alleinstehende Frauen | Stadt Zürich | |
@@ -74,7 +74,7 @@ Stand: 2026-07-13 (5 / 114 implementiert)
 | ⬜ | Kraftwerk 1 - Bau- und Wohngenossenschaft | Stadt Zürich | |
 | ⬜ | Baugenossenschaft Kyburg | Stadt Zürich | |
 | ⬜ | Baugenossenschaft Letten (BGL) | Stadt Zürich | |
-| ⬜ | Gemeinnützige Baugenossenschaft Limmattal (GBL) | Stadt Zürich | |
+| ✅ | Gemeinnützige Baugenossenschaft Limmattal (GBL) | Stadt Zürich | `gbl_zuerich.py` |
 | ⬜ | Baugenossenschaft Linth-Escher | Stadt Zürich | |
 | ⬜ | Logis Suisse AG | Zürich + Winterthur | |
 | ⬜ | Baugenossenschaft Luegisland | Stadt Zürich | |
