@@ -16,8 +16,8 @@ markiert.
 │  GitHub Actions   │      │      Backend           │      │     Frontend      │
 │  Cron (alle 30min)│─────▶│  FastAPI + SQLAlchemy  │◀─────│  React + Leaflet   │
 │                  │ ruft │                        │ REST │                  │
-│  run_scrapers.py │      │  ┌──────────────────┐  │      │  Kartenansicht +  │
-│  ┌────────────┐  │      │  │  Scraper-Adapter   │  │      │  Filterleiste     │
+│ run_all_scrapers.│      │  ┌──────────────────┐  │      │  Kartenansicht +  │
+│  py              │      │  │     Scraper        │  │      │  Filterleiste     │
 │  │ Playwright │  │─────▶│  │  (ein Modul pro    │  │      └─────────────────┘
 │  └────────────┘  │      │  │   Genossenschaft)  │  │
 │                  │      │  └──────────────────┘  │
@@ -32,13 +32,15 @@ markiert.
 
 **Ablauf:**
 
-1. GitHub Actions triggert periodisch `backend/scripts/run_scrapers.py`.
-2. Das Script startet Playwright und lässt jeden registrierten Adapter
-   (`backend/app/scrapers/adapters/`) die Inserate-Seite seiner
-   Genossenschaft parsen. Jeder Adapter implementiert dasselbe Interface
-   (`ScraperAdapter.parse(page) -> list[ScrapedListing]`), damit neue
+1. GitHub Actions triggert periodisch `backend/scripts/run_all_scrapers.py`.
+2. Das Script startet Playwright und lässt jeden registrierten Scraper
+   (`backend/app/scrapers/`) die Inserate-Seite seiner Genossenschaft
+   parsen. Jeder Scraper implementiert dasselbe Interface
+   (`BaseScraper.scrape(page) -> list[WohnungData]`), damit neue
    Genossenschaften ohne Änderungen am Rest des Systems ergänzt werden
-   können.
+   können. Schlägt ein Scraper fehl, wird der Fehler geloggt und die
+   übrigen Scraper laufen trotzdem weiter; am Ende gibt das Script eine
+   Zusammenfassung aus (neu/aktualisiert/fehlgeschlagen).
 3. Neue/aktualisierte Inserate werden in Postgres (Supabase) upserted.
    Neu gefundene Inserate lösen eine Mail-Benachrichtigung aus.
 4. Das Frontend fragt die FastAPI (`GET /listings`) mit Filterparametern
@@ -53,19 +55,24 @@ backend/
     main.py                  # FastAPI-App, Router-Registrierung
     config.py                 # Settings aus Umgebungsvariablen (.env)
     database.py                # SQLAlchemy Engine/Session
-    models.py                  # SQLAlchemy-Modelle (Listing)
+    models.py                  # SQLAlchemy-Modelle (Wohnung)
+    crud.py                     # upsert_wohnung() inkl. Change-Detection per Hash
     schemas.py                  # Pydantic-Schemas für die API
     api/
       listings.py               # GET /listings mit Filtern
     scrapers/
-      base.py                    # ScraperAdapter-Interface + ScrapedListing
-      registry.py                 # Liste aller aktiven Adapter
-      adapters/
-        example_coop.py            # Vorlage für einen neuen Adapter
+      base.py                    # BaseScraper-Interface
+      registry.py                 # Liste aller aktiven Scraper
+      example_coop.py              # Vorlage für einen neuen Scraper
+      abw_winterthur.py             # Scraper für die ABW Winterthur
     notifications/
       mailer.py                    # Mail-Versand bei neuen Inseraten
   scripts/
-    run_scrapers.py               # Entrypoint für den Cron-Job
+    run_all_scrapers.py           # Entrypoint für den Cron-Job
+  alembic/
+    env.py                        # liest DATABASE_URL aus app.config, kennt Base.metadata
+    versions/                     # Migrationsskripte
+  alembic.ini
   requirements.txt
   .env.example
 
@@ -74,13 +81,13 @@ frontend/
     App.jsx                      # Verdrahtet Filter + Karte + API
     components/
       MapView.jsx                 # Leaflet-Karte mit Markern
-      FilterPanel.jsx              # Zimmer/Preis/Quartier-Filter
+      FilterPanel.jsx              # Zimmer/Preis/Viertel-Filter
     api/
       client.js                    # fetch-Wrapper fürs Backend
   package.json
 
 .github/workflows/
-  scrape.yml                      # Cron-Trigger für run_scrapers.py
+  scrape.yml                      # Cron-Trigger für run_all_scrapers.py
 ```
 
 ## Hosting (kostenlos)
@@ -92,12 +99,13 @@ frontend/
   Function/serverlose Alternative — noch zu entscheiden.
 - **Frontend:** statisch, z.B. GitHub Pages, Vercel oder Netlify Free Tier.
 
-## Neuen Genossenschafts-Adapter hinzufügen
+## Neuen Genossenschafts-Scraper hinzufügen
 
-1. `backend/app/scrapers/adapters/<name>.py` anlegen, `ScraperAdapter`
-   erben, `name`, `listing_url` und `parse()` implementieren.
-2. Adapter in `backend/app/scrapers/registry.py` importieren und in
-   `ADAPTERS` eintragen.
+1. `backend/app/scrapers/<name>.py` anlegen, `BaseScraper` erben,
+   `name`, `listing_url` und `scrape()` implementieren (gibt
+   `list[WohnungData]` zurück).
+2. Scraper in `backend/app/scrapers/registry.py` importieren und in
+   `SCRAPERS` eintragen.
 
 ## Lokale Entwicklung (Grundgerüst)
 
@@ -107,7 +115,8 @@ cd backend
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 playwright install chromium
-cp .env.example .env  # Werte anpassen
+cp .env.example .env  # Werte anpassen, insb. DATABASE_URL
+alembic upgrade head   # Schema in Supabase/Postgres anlegen
 uvicorn app.main:app --reload
 
 # Frontend

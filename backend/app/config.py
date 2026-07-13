@@ -10,15 +10,17 @@ class Settings(BaseSettings):
     # Postgres / Supabase
     database_url: str = "postgresql+psycopg://user:password@localhost:5432/genossenschaft"
 
-    # Mail-Benachrichtigung (z.B. SMTP von einem kostenlosen Anbieter)
-    smtp_host: str = ""
-    smtp_port: int = 587
-    smtp_user: str = ""
-    smtp_password: str = ""
+    # Mail-Benachrichtigung ueber Resend (https://resend.com)
+    resend_api_key: str = ""
+    mail_from: str = "onboarding@resend.dev"
     notify_email_to: str = ""
 
     # CORS
     frontend_origin: str = "http://localhost:5173"
+
+    # Geocoding via Nominatim (https://nominatim.org) - Nutzungsbedingungen
+    # verlangen einen identifizierenden User-Agent, idealerweise mit Kontakt.
+    nominatim_user_agent: str = "genossenschaft-wohnungssuche/1.0"
 
 
 @lru_cache

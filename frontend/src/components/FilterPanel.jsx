@@ -11,19 +11,19 @@ export default function FilterPanel({ filters, onChange }) {
     <div className="filter-panel">
       <label>
         Zimmer min.
-        <input type="number" step="0.5" value={filters.roomsMin ?? ""} onChange={handleChange("roomsMin")} />
+        <input type="number" step="0.5" value={filters.zimmerMin ?? ""} onChange={handleChange("zimmerMin")} />
       </label>
       <label>
         Zimmer max.
-        <input type="number" step="0.5" value={filters.roomsMax ?? ""} onChange={handleChange("roomsMax")} />
+        <input type="number" step="0.5" value={filters.zimmerMax ?? ""} onChange={handleChange("zimmerMax")} />
       </label>
       <label>
         Preis max. (CHF)
-        <input type="number" value={filters.priceMax ?? ""} onChange={handleChange("priceMax")} />
+        <input type="number" value={filters.preisMax ?? ""} onChange={handleChange("preisMax")} />
       </label>
       <label>
-        Quartier
-        <input type="text" value={filters.quarter ?? ""} onChange={handleChange("quarter")} />
+        Viertel
+        <input type="text" value={filters.viertel ?? ""} onChange={handleChange("viertel")} />
       </label>
     </div>
   );

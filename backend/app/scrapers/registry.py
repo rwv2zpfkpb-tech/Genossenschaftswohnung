@@ -1,11 +1,11 @@
-"""Zentrale Liste aller aktiven Scraper-Adapter.
+"""Zentrale Liste aller aktiven Scraper.
 
-Neuen Adapter hinzufuegen: Modul in adapters/ anlegen, ScraperAdapter
-implementieren, hier importieren und in ADAPTERS eintragen.
+Neuen Scraper hinzufuegen: Modul in scrapers/ anlegen, BaseScraper
+implementieren, hier importieren und in SCRAPERS eintragen.
 """
-from app.scrapers.adapters.example_coop import ExampleCoopAdapter
-from app.scrapers.base import ScraperAdapter
+from app.scrapers.abw_winterthur import ABWWinterthurScraper
+from app.scrapers.base import BaseScraper
 
-ADAPTERS: list[type[ScraperAdapter]] = [
-    ExampleCoopAdapter,
+SCRAPERS: list[type[BaseScraper]] = [
+    ABWWinterthurScraper,
 ]

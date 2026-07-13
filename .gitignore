@@ -4,6 +4,7 @@ backend/__pycache__/
 **/__pycache__/
 *.pyc
 backend/.env
+backend/test_mailer_preview.html
 
 # Node
 frontend/node_modules/

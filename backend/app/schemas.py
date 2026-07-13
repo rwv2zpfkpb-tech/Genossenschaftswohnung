@@ -4,26 +4,27 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict
 
 
-class ListingOut(BaseModel):
+class WohnungOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    source: str
-    url: str
-    title: str
-    rooms: float | None
-    price_chf: float | None
-    address: str | None
-    quarter: str | None
-    latitude: float | None
-    longitude: float | None
-    first_seen_at: datetime
+    genossenschaft: str
+    quelle_url: str
+    adresse: str
+    viertel: str | None
+    zimmer: float | None
+    preis: int | None
+    beschreibung: str | None
+    bild_urls: list[str]
+    lat: float | None
+    lon: float | None
+    first_seen: datetime
 
 
-class ListingFilter(BaseModel):
+class WohnungFilter(BaseModel):
     """Query-Parameter fuer die Filterung der Kartenansicht."""
 
-    rooms_min: float | None = None
-    rooms_max: float | None = None
-    price_max: float | None = None
-    quarter: str | None = None
+    zimmer_min: float | None = None
+    zimmer_max: float | None = None
+    preis_max: int | None = None
+    viertel: str | None = None

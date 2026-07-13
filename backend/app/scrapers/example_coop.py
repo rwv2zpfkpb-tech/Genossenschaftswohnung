@@ -1,18 +1,19 @@
-"""Vorlage fuer einen Genossenschafts-Adapter.
+"""Vorlage fuer einen Genossenschafts-Scraper.
 
-Kopieren, name/listing_url anpassen und parse() mit den echten
+Kopieren, name/listing_url anpassen und scrape() mit den echten
 Selektoren der jeweiligen Website fuellen.
 """
 from playwright.async_api import Page
 
-from app.scrapers.base import ScrapedListing, ScraperAdapter
+from app.crud import WohnungData
+from app.scrapers.base import BaseScraper
 
 
-class ExampleCoopAdapter(ScraperAdapter):
+class ExampleCoopScraper(BaseScraper):
     name = "example_coop"
     listing_url = "https://example-genossenschaft.ch/wohnungen"
 
-    async def parse(self, page: Page) -> list[ScrapedListing]:
+    async def scrape(self, page: Page) -> list[WohnungData]:
         await page.goto(self.listing_url)
 
         # TODO: echte Selektoren der Zielseite einsetzen.

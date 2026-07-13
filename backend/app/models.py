@@ -36,3 +36,20 @@ class Wohnung(Base):
     first_seen: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     last_seen: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     ist_aktiv: Mapped[bool] = mapped_column(Boolean, default=True)
+
+
+class GeocodeCache(Base):
+    """Cache fuer Nominatim-Geocoding-Ergebnisse, ein Eintrag pro Adresse.
+
+    lat/lon bleiben null, wenn Nominatim fuer diese Adresse nichts gefunden
+    hat - auch das wird gecacht, damit fehlschlagende Adressen nicht bei
+    jedem Scraper-Lauf erneut angefragt werden.
+    """
+
+    __tablename__ = "geocode_cache"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    adresse: Mapped[str] = mapped_column(String, unique=True, index=True)
+    lat: Mapped[float | None] = mapped_column(Float, nullable=True)
+    lon: Mapped[float | None] = mapped_column(Float, nullable=True)
+    geocoded_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

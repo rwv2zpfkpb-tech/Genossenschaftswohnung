@@ -14,15 +14,15 @@ export default function MapView({ listings }) {
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       {listings
-        .filter((listing) => listing.latitude != null && listing.longitude != null)
+        .filter((listing) => listing.lat != null && listing.lon != null)
         .map((listing) => (
-          <Marker key={listing.id} position={[listing.latitude, listing.longitude]}>
+          <Marker key={listing.id} position={[listing.lat, listing.lon]}>
             <Popup>
-              <strong>{listing.title}</strong>
+              <strong>{listing.adresse}</strong>
               <br />
-              {listing.rooms} Zimmer &middot; CHF {listing.price_chf}
+              {listing.zimmer} Zimmer &middot; CHF {listing.preis}
               <br />
-              <a href={listing.url} target="_blank" rel="noreferrer">
+              <a href={listing.quelle_url} target="_blank" rel="noreferrer">
                 Zum Inserat
               </a>
             </Popup>
