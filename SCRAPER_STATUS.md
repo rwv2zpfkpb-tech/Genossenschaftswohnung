@@ -6,7 +6,7 @@ Scraper unter `backend/app/scrapers/`. Bei jedem neuen Scraper diese Datei
 aktualisieren (Zeile auf ✅ setzen + Modulname eintragen) und den Stand-Timestamp
 unten anpassen.
 
-Stand: 2026-07-13 (2 / 114 implementiert)
+Stand: 2026-07-13 (3 / 114 implementiert)
 
 ## Legende
 - ✅ implementiert (in `registry.py` registriert)
@@ -16,7 +16,7 @@ Stand: 2026-07-13 (2 / 114 implementiert)
 |---|---|---|---|
 | ✅ | Allgemeine Baugenossenschaft Winterthur (ABW) | Winterthur | `abw_winterthur.py` |
 | ✅ | Allgemeine Baugenossenschaft Zürich (ABZ) | Stadt Zürich | `abz_zuerich.py` |
-| ⬜ | Alpenblick Horgen | Horgen | |
+| ✅ | Alpenblick Horgen | Horgen | `alpenblick_horgen.py` |
 | ⬜ | Genossenschaft Alte Buchserstrasse Boppelsen | Boppelsen | |
 | ⬜ | Genossenschaft Alterssiedlung Dürnten | Dürnten | |
 | ⬜ | Stiftung Alterswohnungen der Stadt Zürich (SAW) | Stadt Zürich | |
