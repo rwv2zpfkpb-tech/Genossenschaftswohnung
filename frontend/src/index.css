@@ -1,0 +1,98 @@
+@import url("https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap");
+
+body {
+  margin: 0;
+  background: #faf9f6;
+  font-family: "IBM Plex Sans", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+input[type="range"] {
+  height: 18px;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d8d5cd;
+  border-radius: 4px;
+}
+
+.marker-cluster-small,
+.marker-cluster-small div {
+  background-color: #e3ede7 !important;
+}
+
+.marker-cluster-medium,
+.marker-cluster-medium div {
+  background-color: #c7decf !important;
+}
+
+.marker-cluster-large,
+.marker-cluster-large div {
+  background-color: #a7cbb4 !important;
+}
+
+.marker-cluster div {
+  color: #1c1c1a !important;
+  font-family: "IBM Plex Sans", sans-serif !important;
+  font-weight: 700 !important;
+  font-size: 12px !important;
+}
+
+.marker-cluster {
+  border: 2px solid #faf9f6 !important;
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 10px !important;
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+.leaflet-popup-content {
+  margin: 0 !important;
+  width: 240px !important;
+}
+
+.leaflet-container {
+  font-family: "IBM Plex Sans", sans-serif !important;
+  background: #edebe5 !important;
+}
+
+.leaflet-popup-tip {
+  background: #fff !important;
+}
+
+.listing-card {
+  transition: box-shadow 0.15s, transform 0.15s;
+}
+
+.listing-card:hover {
+  box-shadow: 0 6px 18px rgba(28, 28, 26, 0.1);
+  transform: translateY(-1px);
+}
+
+.filter-reset-button:hover,
+.viertel-option:hover {
+  background: #f5f4ef;
+}
+
+.gw-map-popup-button {
+  flex: 1;
+  border: none;
+  border-radius: 6px;
+  padding: 7px 0;
+  font-size: 12.5px;
+  font-family: "IBM Plex Sans", sans-serif;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  text-decoration: none;
+}
