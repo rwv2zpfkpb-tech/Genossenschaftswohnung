@@ -1,9 +1,0 @@
-DATABASE_URL=postgresql+psycopg://user:password@localhost:5432/genossenschaft
-
-SMTP_HOST=
-SMTP_PORT=587
-SMTP_USER=
-SMTP_PASSWORD=
-NOTIFY_EMAIL_TO=
-
-FRONTEND_ORIGIN=http://localhost:5173
