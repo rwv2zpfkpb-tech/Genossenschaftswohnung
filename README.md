@@ -95,9 +95,16 @@ frontend/
 - **Datenbank:** [Supabase](https://supabase.com) Free Tier (Postgres).
 - **Scraper:** GitHub Actions Cron (im Free-Tier-Limit für private/öffentliche
   Repos ausreichend für einen Lauf alle 30 Minuten).
-- **Backend:** z.B. Fly.io / Render Free Tier oder als Supabase Edge
-  Function/serverlose Alternative — noch zu entscheiden.
-- **Frontend:** statisch, z.B. GitHub Pages, Vercel oder Netlify Free Tier.
+- **Backend:** [Render](https://render.com) Free Tier (Web Service via
+  `render.yaml` im Repo-Root, `rootDir: backend`, Start-Command
+  `uvicorn app.main:app --host 0.0.0.0 --port $PORT`). Benoetigte
+  Env-Vars auf Render setzen: `DATABASE_URL`, `FRONTEND_ORIGIN`
+  (die Vercel-Produktions-URL), `RESEND_API_KEY`, `MAIL_FROM`,
+  `NOTIFY_EMAIL_TO`, `NOMINATIM_USER_AGENT`.
+- **Frontend:** [Vercel](https://vercel.com) (Root-Verzeichnis des Projekts
+  bleibt der Repo-Root, `vercel.json` baut `frontend/` und deployt
+  `frontend/dist`). Env-Var `VITE_API_BASE_URL` auf die Render-Backend-URL
+  setzen (z.B. `https://genossenschaft-backend.onrender.com`).
 
 ## Neuen Genossenschafts-Scraper hinzufügen
 

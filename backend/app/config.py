@@ -15,8 +15,11 @@ class Settings(BaseSettings):
     mail_from: str = "onboarding@resend.dev"
     notify_email_to: str = ""
 
-    # CORS
+    # CORS. frontend_origin ist die feste Produktions-URL, frontend_origin_regex
+    # deckt zusaetzlich Vercel-Preview-Deployments ab (deren Subdomain sich pro
+    # Deploy aendert).
     frontend_origin: str = "http://localhost:5173"
+    frontend_origin_regex: str = r"https://.*\.vercel\.app"
 
     # Geocoding via Nominatim (https://nominatim.org) - Nutzungsbedingungen
     # verlangen einen identifizierenden User-Agent, idealerweise mit Kontakt.
