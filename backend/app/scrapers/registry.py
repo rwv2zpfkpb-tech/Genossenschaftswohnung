@@ -9,8 +9,10 @@ from app.scrapers.alpenblick_horgen import AlpenblickHorgenScraper
 from app.scrapers.base import BaseScraper
 from app.scrapers.bsh_zuerich import BSHZuerichScraper
 from app.scrapers.buchserstrasse_boppelsen import BuchserstrasseBoppelsenScraper
+from app.scrapers.ga_duernten import GADuerntenScraper
 from app.scrapers.gbl_zuerich import GBLZuerichScraper
 from app.scrapers.pwg_zuerich import PWGZuerichScraper
+from app.scrapers.saw_zuerich import SAWZuerichScraper
 
 SCRAPERS: list[type[BaseScraper]] = [
     ABWWinterthurScraper,
@@ -18,6 +20,8 @@ SCRAPERS: list[type[BaseScraper]] = [
     AlpenblickHorgenScraper,
     BSHZuerichScraper,
     BuchserstrasseBoppelsenScraper,
+    GADuerntenScraper,
     GBLZuerichScraper,
     PWGZuerichScraper,
+    SAWZuerichScraper,
 ]
