@@ -6,11 +6,32 @@ Scraper unter `backend/app/scrapers/`. Bei jedem neuen Scraper diese Datei
 aktualisieren (Zeile auf ✅ setzen + Modulname eintragen) und den Stand-Timestamp
 unten anpassen.
 
-Stand: 2026-07-14 (9 / 114 implementiert)
+Stand: 2026-07-22 (17 / 114 implementiert)
 
 ## Legende
 - ✅ implementiert (in `registry.py` registriert)
 - ⬜ offen
+
+## Konvention: Genossenschaften ohne aktuell freie Wohnungen
+
+Zeigt eine Genossenschaftsseite im Recherchezeitpunkt (auch über Jahre im
+Wayback-Verlauf) durchgehend nur eine "keine Wohnung frei"-Meldung, wird der
+Scraper trotzdem gebaut - nicht übersprungen. Muster (siehe `ga_duernten.py`,
+`aurora_esslingen.py`, `bachtel_hinwil.py`, `bon_lieu.py`):
+
+- Der Scraper erkennt gezielt den Kein-Wohnung-frei-Text (Regex/String-Check)
+  und gibt in diesem Fall `[]` zurück.
+- Fehlt dieser Text, wird **nicht** versucht, Zimmer/Miete/Fläche strukturiert
+  zu parsen (das lässt sich ohne echtes Beispiel nicht verifizieren). Stattdessen
+  wird der gesamte sichtbare Text des betroffenen Blocks als ein einzelnes
+  generisches Inserat (`beschreibung` = Rohtext, `adresse` = Sitz der
+  Genossenschaft) zurückgegeben.
+- Dadurch löst jede echte Ausschreibung garantiert die Notification aus, auch
+  wenn die Feldextraktion noch nicht exakt sitzt.
+- Taucht danach ein echter Live-Eintrag auf, wird der Scraper anhand dieses
+  konkreten Falls nachgeschärft (Regex/Selektoren für Zimmer, Preis etc.
+  ergänzen), analog zum Vorgehen bei `bg_duebendorf.py`, wo echte Wayback-
+  Snapshots als Referenzdaten genutzt wurden.
 
 | Status | Genossenschaft | Region | Scraper-Modul |
 |---|---|---|---|
@@ -21,21 +42,21 @@ Stand: 2026-07-14 (9 / 114 implementiert)
 | ✅ | Genossenschaft Alterssiedlung Dürnten | Dürnten | `ga_duernten.py` |
 | ✅ | Stiftung Alterswohnungen der Stadt Zürich (SAW) | Stadt Zürich | `saw_zuerich.py` |
 | ⬜ | Wohngenossenschaft ASIG | Stadt Zürich | |
-| ⬜ | Baugenossenschaft Aurora | Esslingen | |
-| ⬜ | Wohnbaugenossenschaft Bachtel | Hinwil | |
+| ✅ | Baugenossenschaft Aurora | Esslingen | `aurora_esslingen.py` |
+| ✅ | Wohnbaugenossenschaft Bachtel | Hinwil | `bachtel_hinwil.py` |
 | ⬜ | Bagestra | Stadt Zürich | |
 | ⬜ | Bahoge | Stadt Zürich | |
 | ⬜ | Genossenschaft der Baufreunde | Stadt Zürich | |
-| ⬜ | Baugenossenschaft des Eidgenössischen Personals (BEP) Zürich | Stadt Zürich | |
-| ⬜ | Bon Lieu | Stadt Zürich | |
+| ✅ | Baugenossenschaft des Eidgenössischen Personals (BEP) Zürich | Stadt Zürich | `bep_zuerich.py` |
+| ✅ | Bon Lieu | Stadt Zürich | `bon_lieu.py` |
 | ⬜ | Baugenossenschaft Brunnenhof Zürich (BBZ) | Stadt Zürich | |
-| ⬜ | BSZ Schönau | Stadt Zürich | |
-| ⬜ | Gemeinnützige Baugenossenschaft Burgmatte (GBB) | Stadt Zürich | |
-| ⬜ | BUWO - Baugenossenschaft Bubikon/Wolfhausen | Bubikon | |
+| ✅ | BSZ Schönau | Stadt Zürich | `bsz_schoenau.py` |
+| ✅ | Gemeinnützige Baugenossenschaft Burgmatte (GBB) | Stadt Zürich | `gbb_zuerich.py` |
+| ✅ | BUWO - Baugenossenschaft Bubikon/Wolfhausen | Bubikon | `buwo_bubikon.py` |
 | ⬜ | Buwo Dübendorf | Dübendorf | |
 | ⬜ | Baugenossenschaft Denzlerstrasse Zürich (BDZ) | Stadt Zürich | |
 | ⬜ | DOMUM | Winterthur | |
-| ⬜ | Baugenossenschaft Dübendorf | Dübendorf | |
+| ✅ | Baugenossenschaft Dübendorf | Dübendorf | `bg_duebendorf.py` |
 | ⬜ | Eisenbahner-Baugenossenschaft Zürich-Altstetten (EBA) | Stadt Zürich | |
 | ⬜ | EBG Dreispitz | Stadt Zürich | |
 | ⬜ | Wohnbaugenossenschaft Effretikon-Illnau | Effretikon + Illnau | |
@@ -131,3 +152,69 @@ Stand: 2026-07-14 (9 / 114 implementiert)
 
 Nicht in der Registry gezaehlt: `example_coop.py` ist eine Vorlage ohne
 funktionierende Implementierung (`scrape()` wirft `NotImplementedError`).
+
+## Rechercheergebnisse zu offenen Kandidaten (kein eigener Scraper moeglich)
+
+Bei folgenden Genossenschaften liegen die freien Wohnungen ausschliesslich auf
+einem externen Immobilienportal (Homegate/ImmoScout24/eigenes SaaS-Widget)statt
+auf einer selbst gehosteten Seite - kein Scraping der Genossenschafts-Website
+moeglich, das externe Portal ist entweder botgeschuetzt (Homegate: Cloudflare-
+Challenge) oder fachfremd fuer einen Pro-Coop-Scraper:
+- Wohngenossenschaft ASIG: asig-wohnen.ch verlinkt nur auf
+  homegate.ch/mieten/alle-mietinserate/trefferliste?a=asg (Cloudflare-Schutz).
+- Genossenschaft der Baufreunde: baufreunde.ch/vermietung/ bindet ein
+  Homegate-Widget ein (`data-provider="homegate"`).
+- Baugenossenschaft Brunnenhof Zürich (BBZ): bgbrunnenhof.ch verweist explizit
+  auf externe Portale, bindet ein ImmoScout24-Widget ein (`data-provider="is24"`).
+- Bagestra: bagestra.ch bindet ein eigenes SaaS-Vermietungsportal
+  (vermieten.bagestra.ch, Vite-SPA) per iframe ein.
+- Bahoge: bahoge.ch/vermietung/ verlinkt explizit nur auf
+  homegate.ch/mieten-oder-kaufen/alle-inserate/trefferliste?a=n134 (Cloudflare-
+  Schutz), keine eigene Wohnungsliste auf der Seite.
+
+Wohnbaugenossenschaft Bachtel (Hinwil, wbg-bachtel-hinwil.ch/liegenschaften)
+wurde nach demselben Muster wie `ga_duernten.py` umgesetzt (`bachtel_hinwil.py`),
+siehe Tabelle oben - dauerhaft "keine freien Wohnungen" (Wayback 29.05.2025
+und Live-Stand Juli 2026), bislang kein Fall zum Verifizieren beobachtet.
+
+Baugenossenschaft Aurora (Esslingen, bgaurora.ch/siedlung/#freie-objekte)
+wurde nach demselben Muster umgesetzt (`aurora_esslingen.py`), siehe Tabelle
+oben.
+
+bonlieuGenossenschaft fuer Wohnen und Kultur (Zuerich Kreis 4,
+bonlieu.ch/der-bonlieuwohnbereich.html) wurde nach demselben Muster wie
+`ga_duernten.py` umgesetzt (`bon_lieu.py`) - dauerhaft "keine Objekte frei"
+(Wayback-Snapshots Februar 2015 bis Januar 2026, alle mit identischem Text),
+bislang kein Fall zum Verifizieren beobachtet.
+
+Gemeinnützige Baugenossenschaft Burgmatte (GBB, Zürich Kreis 8, burgmatte.ch)
+wurde nach demselben Muster umgesetzt (`gbb_zuerich.py`), siehe Tabelle oben.
+Die Seite ist eine reine One-Page-Site (robots.txt liefert 404, keine
+Unterseiten); der Abschnitt `#rent` zeigt im Live-Stand Juli 2026 dauerhaft
+"Zur Zeit sind leider keine freien Wohnungen verfügbar", bislang kein Fall
+zum Verifizieren beobachtet.
+
+BUWO - Baugenossenschaft Bubikon/Wolfhausen (buwo.ch/freie-wohnungen/) wurde
+umgesetzt (`buwo_bubikon.py`), siehe Tabelle oben. Die Seite ist eine
+Avada/WordPress-Seite (Fusion Builder): pro vermieteter Liegenschaft gibt es
+einen Block mit `<h3>`-Adresse und einer `ul.fusion-checklist` mit einem
+`<li>` pro Einheit (Linktext auf PDF-Vermietungsflyer, z.B. "3-Zimmer-Wohnung
+2. OG rechts") - Miete/Flaeche stehen nur im PDF. Im Live-Stand Juli 2026 war
+genau eine Einheit ausgeschrieben (Herschärenstrasse 3a, 8633 Wolfhausen),
+gegen die der Scraper verifiziert wurde. Kein Wayback-Verlauf verfuegbar (die
+aktuelle Site wurde nie gecrawlt); der `<meta name="description">`-Text
+"Keine Freie Wohnungen" ist ein offenbar statisches, nie aktualisiertes
+SEO-Feld und wird bewusst nicht zur Erkennung genutzt - stattdessen wird rein
+ueber das Vorhandensein von `<h3>` + `ul.fusion-checklist`-Bloecken erkannt.
+
+Baugenossenschaft Schönau (BSZ, Zürich-Seebach, bsz-schoenau.ch/vermietung)
+wurde nach demselben Muster umgesetzt (`bsz_schoenau.py`), siehe Tabelle
+oben. Besonderheit: der Statustext im `#freie-objekte`-Block wechselt ueber
+die Zeit zwischen mehreren Formulierungen (Wayback 2017-2026) - neben zwei
+"keine Wohnung frei"-Varianten gab es zwischenzeitlich auch Ankuendigungen
+zu einer Neubau-Vermietungsrunde ("~100 neue Wohnungen ab Fruehsommer 2025",
+spaeter "Anmeldefenster geschlossen, wir sichten Bewerbungen") - nie aber
+eine einzelne Wohnung mit Adresse/Zimmer/Miete. Nur die beiden bekannten
+"keine Wohnung frei"-Formulierungen werden per Regex erkannt; jeder andere
+Text (inkl. der Vermietungsrunden-Ankuendigungen) loest wie bei `bon_lieu.py`
+ein generisches Inserat und damit die Notification aus.

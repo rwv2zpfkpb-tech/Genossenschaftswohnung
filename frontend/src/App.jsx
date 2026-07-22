@@ -10,8 +10,11 @@ import DetailModal from "./components/DetailModal.jsx";
 
 const SLOW_LOAD_HINT_DELAY_MS = 4000;
 
+const DEFAULT_PRICE_MIN = 800;
 const DEFAULT_PRICE_MAX = 3000;
 const DEFAULT_ZIMMER_MIN = 1;
+const DEFAULT_ZIMMER_MAX = 6;
+const DEFAULT_QM_MIN = 30;
 const DEFAULT_QM_MAX = 160;
 
 export default function App() {
@@ -21,8 +24,11 @@ export default function App() {
   const [showSlowLoadHint, setShowSlowLoadHint] = useState(false);
 
   const [view, setView] = useState("list");
+  const [priceMin, setPriceMin] = useState(DEFAULT_PRICE_MIN);
   const [priceMax, setPriceMax] = useState(DEFAULT_PRICE_MAX);
   const [zimmerMin, setZimmerMin] = useState(DEFAULT_ZIMMER_MIN);
+  const [zimmerMax, setZimmerMax] = useState(DEFAULT_ZIMMER_MAX);
+  const [qmMin, setQmMin] = useState(DEFAULT_QM_MIN);
   const [qmMax, setQmMax] = useState(DEFAULT_QM_MAX);
   const [viertelSelected, setViertelSelected] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
@@ -46,12 +52,12 @@ export default function App() {
   const filteredExclViertel = useMemo(
     () =>
       listings.filter((l) => {
-        if (l.preis != null && l.preis > priceMax) return false;
-        if (l.zimmer != null && l.zimmer < zimmerMin) return false;
-        if (l.flaeche != null && l.flaeche > qmMax) return false;
+        if (l.preis != null && (l.preis < priceMin || l.preis > priceMax)) return false;
+        if (l.zimmer != null && (l.zimmer < zimmerMin || l.zimmer > zimmerMax)) return false;
+        if (l.flaeche != null && (l.flaeche < qmMin || l.flaeche > qmMax)) return false;
         return true;
       }),
-    [listings, priceMax, zimmerMin, qmMax],
+    [listings, priceMin, priceMax, zimmerMin, zimmerMax, qmMin, qmMax],
   );
 
   const filtered = useMemo(
@@ -85,8 +91,11 @@ export default function App() {
   const selectedListing = selectedId != null ? listings.find((l) => l.id === selectedId) : null;
 
   const resetFilters = () => {
+    setPriceMin(DEFAULT_PRICE_MIN);
     setPriceMax(DEFAULT_PRICE_MAX);
     setZimmerMin(DEFAULT_ZIMMER_MIN);
+    setZimmerMax(DEFAULT_ZIMMER_MAX);
+    setQmMin(DEFAULT_QM_MIN);
     setQmMax(DEFAULT_QM_MAX);
     setViertelSelected([]);
   };
@@ -107,12 +116,24 @@ export default function App() {
       <Header view={view} onViewChange={setView} />
 
       <FilterPanel
+        priceMin={priceMin}
         priceMax={priceMax}
-        onPriceMaxChange={setPriceMax}
+        onPriceChange={(min, max) => {
+          setPriceMin(min);
+          setPriceMax(max);
+        }}
         zimmerMin={zimmerMin}
-        onZimmerMinChange={setZimmerMin}
+        zimmerMax={zimmerMax}
+        onZimmerChange={(min, max) => {
+          setZimmerMin(min);
+          setZimmerMax(max);
+        }}
+        qmMin={qmMin}
         qmMax={qmMax}
-        onQmMaxChange={setQmMax}
+        onQmChange={(min, max) => {
+          setQmMin(min);
+          setQmMax(max);
+        }}
         viertelOptions={viertelOptions}
         resultCountText={`${filtered.length} ${filtered.length === 1 ? "Wohnung gefunden" : "Wohnungen gefunden"}`}
         onReset={resetFilters}
