@@ -4,8 +4,11 @@ import { fetchListings } from "./api/client.js";
 import Header from "./components/Header.jsx";
 import FilterPanel from "./components/FilterPanel.jsx";
 import ListingGrid from "./components/ListingGrid.jsx";
+import ListingGridSkeleton from "./components/ListingGridSkeleton.jsx";
 import MapView from "./components/MapView.jsx";
 import DetailModal from "./components/DetailModal.jsx";
+
+const SLOW_LOAD_HINT_DELAY_MS = 4000;
 
 const DEFAULT_PRICE_MAX = 3000;
 const DEFAULT_ZIMMER_MIN = 1;
@@ -15,6 +18,7 @@ export default function App() {
   const [listings, setListings] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showSlowLoadHint, setShowSlowLoadHint] = useState(false);
 
   const [view, setView] = useState("list");
   const [priceMax, setPriceMax] = useState(DEFAULT_PRICE_MAX);
@@ -29,6 +33,15 @@ export default function App() {
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    if (!loading) {
+      setShowSlowLoadHint(false);
+      return;
+    }
+    const timer = setTimeout(() => setShowSlowLoadHint(true), SLOW_LOAD_HINT_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [loading]);
 
   const filteredExclViertel = useMemo(
     () =>
@@ -110,7 +123,15 @@ export default function App() {
           <div style={{ padding: "22px 24px", color: "#B3352C", fontSize: "13.5px" }}>{error}</div>
         )}
         {!error && loading && (
-          <div style={{ padding: "22px 24px", color: "#6B6862", fontSize: "13.5px" }}>Lade Inserate…</div>
+          <div style={{ padding: "22px 24px" }}>
+            {showSlowLoadHint && (
+              <div style={{ color: "#6B6862", fontSize: "13.5px", marginBottom: "14px" }}>
+                Der Server war inaktiv und startet gerade hoch – das kann beim ersten Aufruf bis zu
+                einer Minute dauern.
+              </div>
+            )}
+            <ListingGridSkeleton />
+          </div>
         )}
         {!error && !loading && (
           <div

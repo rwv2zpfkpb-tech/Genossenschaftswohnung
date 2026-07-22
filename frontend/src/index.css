@@ -74,6 +74,21 @@ input[type="range"] {
   transition: box-shadow 0.15s, transform 0.15s;
 }
 
+.skeleton-shimmer {
+  background: linear-gradient(90deg, #ECE9E2 25%, #F5F3EE 37%, #ECE9E2 63%);
+  background-size: 400% 100%;
+  animation: skeleton-shimmer 1.4s ease infinite;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
+}
+
 .listing-card:hover {
   box-shadow: 0 6px 18px rgba(28, 28, 26, 0.1);
   transform: translateY(-1px);
