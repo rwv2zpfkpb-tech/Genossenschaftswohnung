@@ -1,32 +1,36 @@
 """Scraper fuer die Stiftung Alterswohnungen der Stadt Zuerich (SAW).
 
-listing_url ist die neue (seit Oktober 2024 aktive) Vermietungs-Plattform
-`mieten.wohnenab60.ch/flat` - eine SvelteKit-SPA, server-seitig gerendert.
-Es existiert keine `robots.txt` (404), also kein Crawling-Verbot.
+listing_url ist die Vermietungs-Plattform `mieten.wohnenab60.ch/flat` - eine
+SvelteKit-SPA, server-seitig gerendert. Es existiert keine `robots.txt`
+(404), also kein Crawling-Verbot.
 
 Die Seite zeigt unter der Ueberschrift "Freie Wohnungen" eine Grid-Liste
 (`div.grid-cols-subgrid`, direkt folgend auf den Wrapper-Div des `<h2>`
-"Freie Wohnungen"). Jedes direkte Kind-Div ist eine Karte. Ist keine Wohnung
-frei, enthaelt die Liste genau eine Karte mit dem Text
-"Aktuell sind keine Wohnungen frei" - Stand Juli 2026 war das durchgehend
-der Fall, es gab keine einzige Karte mit echten Inseratsdaten zu verifizieren.
+"Freie Wohnungen"). Jedes direkte Kind-Div ist eine Karte mit Link auf eine
+Detailseite (`/flat/<id>`). Ist keine Wohnung frei, enthaelt die Liste genau
+eine Karte mit dem Text "Aktuell sind keine Wohnungen frei".
+
+Stand Juli 2026 waren erstmals drei echte Karten live (vorher durchgehend
+keine Vakanz) - damit liess sich die Extraktion gegen echte Daten
+verifizieren. Die Karten selbst enthalten nur Zimmerzahl/Titel, Bruttomiete
+und die Adresse als reinen Fliesstext (kein Quartier, keine Flaeche); auf der
+verlinkten Detailseite steht dagegen eine sauber ausgezeichnete
+Definitionsliste ("Details": Siedlung/Adresse/Quartier/Zimmer/Stockwerk/
+Flaeche, "Kosten": Bruttomiete/Nettomiete/...) - je ein
+`div.flex.items-start.justify-between` mit Label-`<p>` und Werte-`<p
+class="...text-right">`. Wir besuchen deshalb pro Karte zusaetzlich die
+Detailseite und lesen die Felder darueber aus, statt sie bruechig aus der
+Zeilenreihenfolge der Kartenkarte zu raten - bei ueblicherweise 0-3 aktiven
+Vakanzen faellt der zusaetzliche Request pro Inserat nicht ins Gewicht.
 
 Der serverseitig eingebettete SvelteKit-Datenpayload (`<script>`-Tag) enthaelt
-zusaetzlich ein strukturiertes `advertisements`-Array (aktuell leer) sowie ein
-`firstRentals`-Array fuer Erstvermietungen von Neubauten (z.B. "Manegghof",
-"Espenhof West" - Stand Juli 2026 beide mit laengst abgelaufener
-Bewerbungsfrist und nirgends auf der Seite sichtbar gerendert). Da dieses
+zusaetzlich ein strukturiertes `advertisements`-Array sowie ein
+`firstRentals`-Array fuer Erstvermietungen von Neubauten. Da dieses
 Firstrentals-Array offenbar unabhaengig vom Bewerbungsfristablauf im Payload
 verbleibt, waere ein Parsing dieses Feldes nicht zuverlaessig genug, um
 "aktuell aktiv" von "laengst abgelaufen" zu unterscheiden - wir verlassen uns
 deshalb bewusst nur auf die sichtbar gerenderten Karten der "Freie
 Wohnungen"-Sektion statt auf dieses rohe JS-Objekt.
-
-Da keine echte Wohnungskarte je beobachtet werden konnte, wird bei
-vorhandenen Karten (Text weicht vom Kein-Wohnung-frei-Hinweis ab) bewusst
-keine Feldextraktion (Zimmer/Miete/Flaeche) versucht, sondern - analog zu
-ga_duernten.py - der sichtbare Kartentext als generisches Inserat
-zurueckgegeben, inkl. Detail-Link falls die Karte einen enthaelt.
 """
 import re
 from urllib.parse import urljoin
@@ -43,6 +47,10 @@ _GRID_XPATH = (
     '/following-sibling::div[contains(@class,"grid-cols-subgrid")][1]'
 )
 
+_ROOMS_RE = re.compile(r"(\d+(?:[.,]\d+)?)")
+_PRICE_RE = re.compile(r"(?:fr\.?|chf)\s*([\d'’]+)", re.IGNORECASE)
+_AREA_RE = re.compile(r"(\d+(?:[.,]\d+)?)\s*m(?:2|²)", re.IGNORECASE)
+
 
 class SAWZuerichScraper(BaseScraper):
     name = "saw_zuerich"
@@ -53,7 +61,7 @@ class SAWZuerichScraper(BaseScraper):
 
         cards = page.locator(_GRID_XPATH).locator("> div")
 
-        listings: list[WohnungData] = []
+        detail_urls: list[str] = []
         for i in range(await cards.count()):
             card = cards.nth(i)
             text = (await card.inner_text()).strip()
@@ -62,16 +70,79 @@ class SAWZuerichScraper(BaseScraper):
 
             link = card.locator("a[href]").first
             href = await link.get_attribute("href") if await link.count() else None
-            quelle_url = urljoin(self.listing_url, href) if href else self.listing_url
-            lines = [line.strip() for line in text.splitlines() if line.strip()]
-            adresse = lines[0] if lines else self.listing_url
+            if href:
+                detail_urls.append(urljoin(self.listing_url, href))
 
-            listings.append(
-                WohnungData(
-                    genossenschaft=self.name,
-                    quelle_url=quelle_url,
-                    adresse=adresse,
-                    beschreibung=text,
-                )
-            )
+        listings: list[WohnungData] = []
+        for url in detail_urls:
+            listing = await self._parse_detail(page, url)
+            if listing is not None:
+                listings.append(listing)
         return listings
+
+    async def _parse_detail(self, page: Page, url: str) -> WohnungData | None:
+        await page.goto(url, wait_until="networkidle")
+
+        adresse = await self._detail_value(page, "Adresse")
+        if not adresse:
+            return None
+        viertel = await self._detail_value(page, "Quartier")
+
+        rooms_match = _ROOMS_RE.search(await self._detail_value(page, "Zimmer") or "")
+        zimmer = float(rooms_match.group(1).replace(",", ".")) if rooms_match else None
+
+        area_match = _AREA_RE.search(await self._detail_value(page, "Fläche") or "")
+        flaeche = float(area_match.group(1).replace(",", ".")) if area_match else None
+
+        price_match = _PRICE_RE.search(await self._detail_value(page, "Bruttomiete") or "")
+        preis = (
+            int(price_match.group(1).replace("'", "").replace("’", ""))
+            if price_match
+            else None
+        )
+
+        beschreibung_locator = page.locator(
+            'xpath=//h2[contains(text(),"Beschreibung")]/following-sibling::div[1]//p'
+        ).first
+        beschreibung = (
+            (await beschreibung_locator.inner_text()).strip()
+            if await beschreibung_locator.count()
+            else None
+        )
+
+        image_locator = page.locator('img[alt="Siedlungs Bild"]').first
+        bild_urls = []
+        if await image_locator.count():
+            src = await image_locator.get_attribute("src")
+            if src:
+                bild_urls.append(urljoin(url, src))
+
+        return WohnungData(
+            genossenschaft=self.name,
+            quelle_url=url,
+            adresse=adresse,
+            viertel=viertel,
+            zimmer=zimmer,
+            preis=preis,
+            flaeche=flaeche,
+            beschreibung=beschreibung,
+            bild_urls=bild_urls,
+        )
+
+    async def _detail_value(self, page: Page, label_prefix: str) -> str | None:
+        """Liest die Werte-Spalte der "Details"/"Kosten"-Zeile zu einem Label.
+
+        Label und Wert liegen als Geschwister-`<p>` in unterschiedlichen
+        Wrapper-Divs innerhalb derselben `justify-between`-Zeile - wir gehen
+        vom Label per Ancestor-Achse (Position 1 = naechstgelegener Vorfahr)
+        zur Zeile hoch und suchen dort das Werte-`<p>` (`text-right`-Klasse).
+        """
+        xpath = (
+            f'xpath=//p[starts-with(normalize-space(.), "{label_prefix}")]'
+            '/ancestor::div[contains(@class,"justify-between")][1]'
+            '//p[contains(@class,"text-right")]'
+        )
+        loc = page.locator(xpath)
+        if await loc.count() == 0:
+            return None
+        return (await loc.first.inner_text()).strip()
